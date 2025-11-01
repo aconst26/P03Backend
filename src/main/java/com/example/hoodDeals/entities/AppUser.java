@@ -2,7 +2,6 @@ package com.example.hoodDeals.entities;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
-import java.util.Objects;
 
 @Entity
 @Table(name = "app_user")
@@ -12,7 +11,7 @@ public class AppUser {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "google_id", unique = true, nullable = false)
+    @Column(name = "google_id", nullable = false, unique = true)
     private String googleId;
 
     @Column(nullable = false)
@@ -22,21 +21,13 @@ public class AppUser {
 
     private String picture;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt = LocalDateTime.now();
 
-    public AppUser() {}
-
-    public AppUser(String googleId, String email, String name, String picture) {
-        this.googleId = googleId;
-        this.email = email;
-        this.name = name;
-        this.picture = picture;
-    }
-
+    // Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -57,17 +48,4 @@ public class AppUser {
 
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof AppUser)) return false;
-        AppUser appUser = (AppUser) o;
-        return Objects.equals(id, appUser.id);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id);
-    }
 }
