@@ -31,6 +31,8 @@ dependencies {
 	runtimeOnly 'org.postgresql:postgresql:42.7.4'
 
 	implementation("org.springframework.boot:spring-boot-starter-actuator")
+
+	implementation("me.paulschwarz:spring-dotenv:4.0.0")
 	
 }
 
