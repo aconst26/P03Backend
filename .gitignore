@@ -1,0 +1,32 @@
+# ------------------------------
+# Java / Spring Boot
+# ------------------------------
+target/
+build/
+out/
+
+# IDE-specific files
+*.iml
+.idea/
+.vscode/
+.classpath
+.project
+.settings/
+
+# Logs and temp files
+*.log
+logs/
+*.tmp
+*.swp
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+
+# ------------------------------
+# Environment / Configuration
+# ------------------------------
+.env
+*.env
+application-prod.properties
+application-secrets.properties
