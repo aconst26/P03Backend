@@ -19,13 +19,13 @@ public interface ListingsRepository extends JpaRepository<Listings, Long> {
     
     List<Listings> findByStatusOrderByCreatedAtDesc(String status);
     
-    @Query("SELECT l FROM Listing l WHERE l.status = 'active' ORDER BY l.createdAt DESC")
+    @Query("SELECT l FROM Listings l WHERE l.status = 'active' ORDER BY l.createdAt DESC")
     List<Listings> findActiveListings();
     
-    @Query("SELECT l FROM Listing l WHERE l.category = :category AND l.status = 'active' ORDER BY l.createdAt DESC")
+    @Query("SELECT l FROM Listings l WHERE l.category = :category AND l.status = 'active' ORDER BY l.createdAt DESC")
     List<Listings> findActiveByCategoryOrderByCreatedAtDesc(@Param("category") String category);
     
-    @Query("SELECT l FROM Listing l WHERE " +
+    @Query("SELECT l FROM Listings l WHERE " +
            "LOWER(l.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            "LOWER(l.description) LIKE LOWER(CONCAT('%', :keyword, '%'))")
     List<Listings> searchListings(@Param("keyword") String keyword);

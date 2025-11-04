@@ -12,13 +12,13 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class ListingDTO {
     private Long id;
-    private Long userId;
+    private Long user_id;
     private String userName;
     private String userPicture;
     private String title;
     private String description;
     private BigDecimal price;
-    private String imageUrl;
+    private String image_url;
     private String status;
     private String category;
     private String location;

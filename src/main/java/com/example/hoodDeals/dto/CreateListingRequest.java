@@ -11,4 +11,5 @@ public class CreateListingRequest {
     private String image_url;
     private String category;
     private String location;
+    private Long user_id;
 }

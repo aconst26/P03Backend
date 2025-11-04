@@ -21,8 +21,8 @@ public class ListingsService {
     private final UserRepository appUserRepository;
     
     @Transactional
-    public ListingDTO createListing(CreateListingRequest request, String email) {
-        User user = appUserRepository.findByEmail(email)
+    public ListingDTO createListing(CreateListingRequest request) {
+        User user = appUserRepository.findById(request.getUser_id())
                 .orElseThrow(() -> new RuntimeException("User not found"));
         
         Listings listing = new Listings();
@@ -124,13 +124,13 @@ public class ListingsService {
     private ListingDTO convertToDTO(Listings listing) {
         ListingDTO dto = new ListingDTO();
         dto.setId(listing.getId());
-        dto.setUserId(listing.getUser().getId());
+        dto.setUser_id(listing.getUser().getId());
         dto.setUserName(listing.getUser().getName());
         dto.setUserPicture(listing.getUser().getPicture());
         dto.setTitle(listing.getTitle());
         dto.setDescription(listing.getDescription());
         dto.setPrice(listing.getPrice());
-        dto.setImageUrl(listing.getImageUrl());
+        dto.setImage_url(listing.getImageUrl());
         dto.setStatus(listing.getStatus());
         dto.setCategory(listing.getCategory());
         dto.setLocation(listing.getLocation());
