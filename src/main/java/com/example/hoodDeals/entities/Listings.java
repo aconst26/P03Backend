@@ -3,6 +3,8 @@ package com.example.hoodDeals.entities;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import jakarta.persistence.*;
 
 @Entity
@@ -24,7 +26,10 @@ public class Listings {
     @Column(nullable = false)
     private BigDecimal price;
 
+    @JsonProperty("imageUrl")
+    @Column(name = "image_url")  
     private String image_url;
+
     private String status;
     private String category;
     private String location;
