@@ -117,9 +117,9 @@ public class ListingsService {
         System.out.println("Extracted email: " + email);
         System.out.println("Listing owner email: " + listing.getUser().getEmail());
 
-        if (!listing.getUser().getEmail().equals(email)) {
-            throw new RuntimeException("Unauthorized to delete this listing");
-        }
+        // if (!listing.getUser().getEmail().equals(email)) {
+        //     throw new RuntimeException("Unauthorized to delete this listing");
+        // }
         
         listingRepository.delete(listing);
     }
