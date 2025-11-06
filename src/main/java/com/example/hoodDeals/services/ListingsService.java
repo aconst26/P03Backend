@@ -114,6 +114,9 @@ public class ListingsService {
         Listings listing = listingRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Listing not found"));
         
+        System.out.println("Extracted email: " + email);
+        System.out.println("Listing owner email: " + listing.getUser().getEmail());
+
         if (!listing.getUser().getEmail().equals(email)) {
             throw new RuntimeException("Unauthorized to delete this listing");
         }
