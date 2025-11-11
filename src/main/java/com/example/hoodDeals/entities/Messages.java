@@ -104,5 +104,11 @@ public class Messages {
             this.updatedAt = updatedAt;
         }
     }
+    public Long getConversationId() {
+        return conversationId;
+    }
+    public void setConversationId(Long conversationId) {
+        this.conversationId = conversationId;
+    }
 
 }
