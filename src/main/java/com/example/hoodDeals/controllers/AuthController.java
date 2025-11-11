@@ -46,7 +46,6 @@ public class AuthController {
     @Value("${github.email-url:https://api.github.com/user/emails}")
     private String githubEmailUrl;
 
-    
     @PostMapping("/signup")
     public ResponseEntity<?> signUp(@RequestBody Map<String, String> body) {
         try {
@@ -118,7 +117,7 @@ public class AuthController {
             userMap.put("id", user.getId());
             userMap.put("email", user.getEmail());
             userMap.put("name", user.getName());
-            userMap.put("googleId", user.getGoogleId()); 
+            userMap.put("googleId", user.getGoogleId());
 
             Map<String, Object> response = new HashMap<>();
             response.put("token", token);
@@ -190,27 +189,29 @@ public class AuthController {
             System.out.println("=== GitHub Authentication Request ===");
             System.out.println("Authorization Code: " + (request.getCode() != null ? "Received" : "Missing"));
             System.out.println("GitHub Client ID: " + githubClientId);
-            System.out.println("GitHub Client Secret: " + (githubClientSecret != null && !githubClientSecret.isEmpty() ? "Set (length: " + githubClientSecret.length() + ")" : "MISSING!"));
+            System.out.println("GitHub Client Secret: " + (githubClientSecret != null && !githubClientSecret.isEmpty()
+                    ? "Set (length: " + githubClientSecret.length() + ")"
+                    : "MISSING!"));
             System.out.println("GitHub Token URL: " + githubTokenUrl);
 
             // Step 1: Exchange code for access token
-            String accessToken = exchangeCodeForToken(request.getCode());
-            
+            String accessToken = exchangeCodeForToken(request.getCode(), request.getPlatform());
+
             if (accessToken == null) {
                 System.err.println("ERROR: Failed to get access token from GitHub");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("error", "Failed to get access token from GitHub"));
+                        .body(Map.of("error", "Failed to get access token from GitHub"));
             }
 
             System.out.println("Access token received from GitHub");
 
             // Step 2: Get user info from GitHub
             GitHubUserInfo githubUser = getGitHubUserInfo(accessToken);
-            
+
             if (githubUser == null) {
                 System.err.println("ERROR: Failed to get user info from GitHub");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("error", "Failed to get user info from GitHub"));
+                        .body(Map.of("error", "Failed to get user info from GitHub"));
             }
 
             System.out.println("GitHub User ID: " + githubUser.getId());
@@ -227,7 +228,8 @@ public class AuthController {
             if (githubUser.getEmail() == null) {
                 System.err.println("ERROR: Unable to retrieve email from GitHub");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", "Unable to retrieve email from GitHub. Please make your email public or grant email permission."));
+                        .body(Map.of("error",
+                                "Unable to retrieve email from GitHub. Please make your email public or grant email permission."));
             }
 
             // Step 4: Find or create user in database
@@ -262,28 +264,33 @@ public class AuthController {
             System.err.println("=== GitHub Authentication Failed ===");
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", "Authentication failed: " + e.getMessage()));
+                    .body(Map.of("error", "Authentication failed: " + e.getMessage()));
         }
     }
 
-    private String exchangeCodeForToken(String code) {
+    private String exchangeCodeForToken(String code, String platform) {
         try {
             System.out.println("=== Exchanging Code for Token ===");
             System.out.println("Code: " + code);
-            
-            // Try mobile credentials first, then web
-            String clientId = githubClientId;
-            String clientSecret = githubClientSecret;
-            
-            System.out.println("Client ID: " + clientId);
-            System.out.println("Client Secret exists: " + (clientSecret != null && !clientSecret.isEmpty()));
-            
+
+            String clientId, clientSecret;
+
+            if ("web".equalsIgnoreCase(platform)) {
+                clientId = githubWebClientId;
+                clientSecret = githubWebClientSecret;
+                System.out.println("Using WEB GitHub credentials");
+            } else {
+                clientId = githubClientId;
+                clientSecret = githubClientSecret;
+                System.out.println("Using MOBILE GitHub credentials");
+            }
+
             RestTemplate restTemplate = new RestTemplate();
-            
+
             // Prepare request body
             Map<String, String> requestBody = new HashMap<>();
-            requestBody.put("client_id", githubClientId);
-            requestBody.put("client_secret", githubClientSecret);
+            requestBody.put("client_id", clientId);
+            requestBody.put("client_secret", clientSecret);
             requestBody.put("code", code);
 
             System.out.println("Request body: " + requestBody);
@@ -297,11 +304,10 @@ public class AuthController {
 
             // Make request to GitHub
             ResponseEntity<String> response = restTemplate.exchange(
-                githubTokenUrl,
-                HttpMethod.POST,
-                entity,
-                String.class
-            );
+                    githubTokenUrl,
+                    HttpMethod.POST,
+                    entity,
+                    String.class);
 
             System.out.println("GitHub Token Response Status: " + response.getStatusCode());
             System.out.println("Raw Response Body: " + response.getBody());
@@ -323,12 +329,13 @@ public class AuthController {
             // Fallback: Try Jackson parsing
             try {
                 com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-                mapper.configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-                
+                mapper.configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,
+                        false);
+
                 GitHubTokenResponse tokenResponse = mapper.readValue(response.getBody(), GitHubTokenResponse.class);
-                
+
                 System.out.println("Parsed token response - access_token: " + tokenResponse.getAccessToken());
-                
+
                 if (tokenResponse.getAccessToken() != null && !tokenResponse.getAccessToken().isEmpty()) {
                     System.out.println("Access token received successfully");
                     return tokenResponse.getAccessToken();
@@ -356,7 +363,7 @@ public class AuthController {
     private GitHubUserInfo getGitHubUserInfo(String accessToken) {
         try {
             RestTemplate restTemplate = new RestTemplate();
-            
+
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(accessToken);
             headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
@@ -364,11 +371,10 @@ public class AuthController {
             HttpEntity<String> entity = new HttpEntity<>(headers);
 
             ResponseEntity<GitHubUserInfo> response = restTemplate.exchange(
-                githubUserUrl,
-                HttpMethod.GET,
-                entity,
-                GitHubUserInfo.class
-            );
+                    githubUserUrl,
+                    HttpMethod.GET,
+                    entity,
+                    GitHubUserInfo.class);
 
             return response.getBody();
         } catch (Exception e) {
@@ -381,7 +387,7 @@ public class AuthController {
     private String getGitHubUserEmail(String accessToken) {
         try {
             RestTemplate restTemplate = new RestTemplate();
-            
+
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(accessToken);
             headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
@@ -389,11 +395,10 @@ public class AuthController {
             HttpEntity<String> entity = new HttpEntity<>(headers);
 
             ResponseEntity<GitHubEmail[]> response = restTemplate.exchange(
-                githubEmailUrl,
-                HttpMethod.GET,
-                entity,
-                GitHubEmail[].class
-            );
+                    githubEmailUrl,
+                    HttpMethod.GET,
+                    entity,
+                    GitHubEmail[].class);
 
             if (response.getBody() != null && response.getBody().length > 0) {
                 // Find primary verified email
@@ -540,8 +545,8 @@ public class AuthController {
     }
 
     public static class GitHubTokenResponse {
-        private String access_token;  // Changed from camelCase
-        private String token_type;    // Changed from camelCase
+        private String access_token; 
+        private String token_type; 
         private String scope;
 
         public String getAccessToken() {
