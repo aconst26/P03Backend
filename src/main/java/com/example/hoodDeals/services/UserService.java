@@ -17,59 +17,113 @@ public class UserService {
 
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
-    // Create or update a user, works for both Google OAuth and standard users
-    public User createOrUpdateUser(String email, String name, String picture, String googleId) {
-        // First, check if user exists by Google ID
-        Optional<User> existingUserByGoogleId = userRepository.findByGoogleId(googleId);
+    // Add/Update this method in UserService.java
+    public User createOrUpdateGitHubUser(String email, String name, String picture, String githubId) {
+        // Try to find by GitHub ID first
+        Optional<User> existingByGithubId = userRepository.findByGithubId(githubId);
 
-        if (existingUserByGoogleId.isPresent()) {
-            User user = existingUserByGoogleId.get();
-            boolean updated = false;
+        if (existingByGithubId.isPresent()) {
+            User user = existingByGithubId.get();
 
-            if (name != null && !name.equals(user.getName())) {
+            // Update name if provided
+            if (name != null && !name.isEmpty()) {
                 user.setName(name);
-                updated = true;
             }
-            if (picture != null && !picture.equals(user.getPicture())) {
+
+            // Only update picture if new one is not null
+            // This preserves existing picture from Google login
+            if (picture != null && !picture.isEmpty()) {
                 user.setPicture(picture);
-                updated = true;
-            }
-            if (email != null && !email.equals(user.getEmail())) {
-                user.setEmail(email);
-                updated = true;
             }
 
-            if (updated) {
-                return userRepository.save(user);
-            }
-            return user;
+            return userRepository.save(user);
         }
 
-        // Check if user exists by email (standard signup)
-        Optional<User> existingUserByEmail = userRepository.findByEmail(email);
-        if (existingUserByEmail.isPresent()) {
-            User user = existingUserByEmail.get();
+        // Try to find by email (user might have signed up with Google first)
+        Optional<User> existingByEmail = findByEmail(email);
 
-            // Link Google ID if not already linked
-            if (user.getGoogleId() == null && googleId != null) {
-                user.setGoogleId(googleId);
-                if (name != null) user.setName(name);
-                if (picture != null) user.setPicture(picture);
-                return userRepository.save(user);
+        if (existingByEmail.isPresent()) {
+            // Link GitHub to existing account
+            User user = existingByEmail.get();
+            user.setGithubId(githubId);
+
+            // Update name if provided
+            if (name != null && !name.isEmpty()) {
+                user.setName(name);
             }
-            return user;
+
+            // Only update picture if:
+            // 1. New picture exists AND
+            // 2. Either existing picture is null OR we want to use the latest
+            if (picture != null && !picture.isEmpty()) {
+                user.setPicture(picture);
+            }
+            // If picture is null from GitHub, keep existing picture (from Google)
+
+            return userRepository.save(user);
         }
 
-        // User doesn't exist, create new
+        // Create new user
         User newUser = new User();
-        newUser.setGoogleId(googleId);
+        newUser.setEmail(email);
+        newUser.setName(name);
+        newUser.setPicture(picture); // Can be null for new users
+        newUser.setGithubId(githubId);
+        newUser.setPassword(null); // OAuth users don't need password
+        return saveUser(newUser);
+    }
+
+    // Create or update a user, works for both Google OAuth and standard users
+    // Add/Update this method in UserService.java
+    public User createOrUpdateUser(String email, String name, String picture, String googleId) {
+        // Try to find by Google ID first
+        Optional<User> existingByGoogleId = userRepository.findByGoogleId(googleId);
+
+        if (existingByGoogleId.isPresent()) {
+            User user = existingByGoogleId.get();
+
+            // Update name if provided
+            if (name != null && !name.isEmpty()) {
+                user.setName(name);
+            }
+
+            // Only update picture if new one is not null
+            if (picture != null && !picture.isEmpty()) {
+                user.setPicture(picture);
+            }
+
+            return userRepository.save(user);
+        }
+
+        // Try to find by email
+        Optional<User> existingByEmail = findByEmail(email);
+
+        if (existingByEmail.isPresent()) {
+            // Link Google to existing account
+            User user = existingByEmail.get();
+            user.setGoogleId(googleId);
+
+            // Update name if provided
+            if (name != null && !name.isEmpty()) {
+                user.setName(name);
+            }
+
+            // Only update picture if new one exists
+            if (picture != null && !picture.isEmpty()) {
+                user.setPicture(picture);
+            }
+
+            return userRepository.save(user);
+        }
+
+        // Create new user
+        User newUser = new User();
         newUser.setEmail(email);
         newUser.setName(name);
         newUser.setPicture(picture);
-        newUser.setIsActive(true);
-        newUser.setRoles("USER");
-
-        return userRepository.save(newUser);
+        newUser.setGoogleId(googleId);
+        newUser.setPassword(null);
+        return saveUser(newUser);
     }
 
     public Optional<User> findByEmail(String email) {
@@ -91,5 +145,5 @@ public class UserService {
     public User saveUser(User user) {
         return userRepository.save(user);
     }
-    
+
 }
