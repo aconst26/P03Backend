@@ -57,4 +57,11 @@ public ResponseEntity<?> getCurrentUser(@RequestHeader(value = "Authorization", 
     public ResponseEntity<?> getAllUsers() {
         return ResponseEntity.ok(userService.findAll());
     }
+    @GetMapping("/by-email")
+public ResponseEntity<?> getByEmail(@RequestParam("email") String email) {
+    return userService.findByEmail(email)
+        .map(ResponseEntity::ok)
+        .orElseGet(() -> ResponseEntity.status(404).body(new User()));
+
+
 }
