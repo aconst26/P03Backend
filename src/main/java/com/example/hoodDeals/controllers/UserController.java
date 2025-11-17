@@ -19,24 +19,39 @@ public class UserController {
     private JwtUtil jwtUtil;
     
     @GetMapping("/me")
-    public ResponseEntity<?> getCurrentUser(@RequestHeader("Authorization") String authHeader) {
-        try {
+public ResponseEntity<?> getCurrentUser(@RequestHeader(value = "Authorization", required = false) String authHeader) {
+    try {
+        if (authHeader == null || authHeader.isBlank()) {
+            return ResponseEntity.status(401).body("Missing Authorization header");
+        }
+
+        // If header starts with Bearer → JWT path
+        if (authHeader.startsWith("Bearer ")) {
             String token = authHeader.replace("Bearer ", "");
-            
             if (!jwtUtil.validateToken(token)) {
                 return ResponseEntity.status(401).body("Invalid token");
             }
-            
+
             String email = jwtUtil.getEmailFromToken(token);
-            
             return userService.findByEmail(email)
                     .map(ResponseEntity::ok)
                     .orElse(ResponseEntity.notFound().build());
-                    
-        } catch (Exception e) {
-            return ResponseEntity.status(401).body("Unauthorized");
         }
+
+        // Otherwise, assume Basic Auth path
+        if (authHeader.startsWith("Basic ")) {
+            // This just returns the list of users so you can verify Basic works
+            // Later, you can change this to look up a real user (if you want)
+            return ResponseEntity.ok(userService.findAll());
+        }
+
+        return ResponseEntity.status(400).body("Unsupported Authorization type");
+    } catch (Exception e) {
+        e.printStackTrace();
+        return ResponseEntity.status(401).body("Unauthorized: " + e.getMessage());
     }
+}
+
 
     @GetMapping("/all")
     public ResponseEntity<?> getAllUsers() {
