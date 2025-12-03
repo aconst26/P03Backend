@@ -5,6 +5,9 @@ import com.example.hoodDeals.dto.message.MessageResponse;
 import com.example.hoodDeals.entities.Messages;
 import com.example.hoodDeals.repositories.ConversationsRepository;
 import com.example.hoodDeals.repositories.MessagesRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,6 +26,32 @@ public class ConversationMessagesController {
         this.conversationsRepo = conversationsRepo;
     }
 
+    // ✅ GET /conversations/{conversationId}/messages?page=&size=
+    @GetMapping
+    public ResponseEntity<Page<MessageResponse>> list(
+            @PathVariable Long conversationId,
+            @PageableDefault(size = 20, sort = "createdAt") Pageable pageable
+    ) {
+        // Make sure conversation exists (optional but nice)
+        conversationsRepo.findById(conversationId)
+                .orElseThrow(() -> new IllegalArgumentException("Conversation not found"));
+
+        Page<Messages> page = messagesRepo
+                .findByConversationIdOrderByCreatedAtAsc(conversationId, pageable);
+
+        Page<MessageResponse> dtoPage = page.map(m -> new MessageResponse(
+                m.getId(),
+                m.getConversationId(),
+                m.getSenderId(),
+                m.getReceiverId(),
+                m.getContent(),
+                m.getCreatedAt(),
+                m.getUpdatedAt()
+        ));
+
+        return ResponseEntity.ok(dtoPage);
+    }
+
     // POST /conversations/{conversationId}/messages
     @PostMapping
     public ResponseEntity<MessageResponse> send(@PathVariable Long conversationId,
@@ -37,20 +66,19 @@ public class ConversationMessagesController {
             return ResponseEntity.badRequest().build();
         }
 
-        // Derive/validate receiver: if body is wrong, force the “other” participant
+        // Derive/validate receiver
         Long expectedReceiver = req.senderId().equals(user1) ? user2 : user1;
         Long receiver = (req.receiverId() != null && req.receiverId().equals(expectedReceiver))
                 ? req.receiverId()
                 : expectedReceiver;
 
-        // Build and save message
         var msg = new Messages();
         msg.setConversationId(conversationId);
         msg.setSenderId(req.senderId());
         msg.setReceiverId(receiver);
         msg.setContent(req.content());
-        msg.setListingId(conv.getListingId()); // keep listing context
-        msg.setIsRead(false);                  // new messages are unread
+        msg.setListingId(conv.getListingId());
+        msg.setIsRead(false);
 
         var saved = messagesRepo.save(msg);
 
@@ -65,70 +93,68 @@ public class ConversationMessagesController {
                 saved.getReceiverId(),
                 saved.getContent(),
                 saved.getCreatedAt(),
-                saved.getUpdatedAt() // using updatedAt since you don't have readAt
+                saved.getUpdatedAt()
         );
         return ResponseEntity.ok(dto);
     }
+
     // PATCH /conversations/{conversationId}/messages/{messageId}/read
-@PatchMapping("/{messageId}/read")
-public ResponseEntity<MessageResponse> markRead(@PathVariable Long conversationId,
-                                                @PathVariable Long messageId) {
-    var conv = conversationsRepo.findById(conversationId)
-            .orElseThrow(() -> new IllegalArgumentException("Conversation not found"));
+    @PatchMapping("/{messageId}/read")
+    public ResponseEntity<MessageResponse> markRead(@PathVariable Long conversationId,
+                                                    @PathVariable Long messageId) {
+        var conv = conversationsRepo.findById(conversationId)
+                .orElseThrow(() -> new IllegalArgumentException("Conversation not found"));
 
-    var msg = messagesRepo.findById(messageId)
-            .orElseThrow(() -> new IllegalArgumentException("Message not found"));
+        var msg = messagesRepo.findById(messageId)
+                .orElseThrow(() -> new IllegalArgumentException("Message not found"));
 
-    // ensure the message belongs to the conversation
-    if (!conversationId.equals(msg.getConversationId())) {
-        return ResponseEntity.badRequest().build();
+        if (!conversationId.equals(msg.getConversationId())) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        var user1 = conv.getUser1Id();
+        var user2 = conv.getUser2Id();
+        if (!(msg.getSenderId().equals(user1) || msg.getSenderId().equals(user2))) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        msg.setIsRead(true);
+        var saved = messagesRepo.save(msg);
+
+        var dto = new MessageResponse(
+                saved.getId(), saved.getConversationId(), saved.getSenderId(), saved.getReceiverId(),
+                saved.getContent(), saved.getCreatedAt(), saved.getUpdatedAt()
+        );
+        return ResponseEntity.ok(dto);
     }
 
-    // optional: ensure caller is a participant (add auth later if needed)
-    var user1 = conv.getUser1Id();
-    var user2 = conv.getUser2Id();
-    if (!(msg.getSenderId().equals(user1) || msg.getSenderId().equals(user2))) {
-        return ResponseEntity.badRequest().build();
+    // PATCH /conversations/{conversationId}/messages/{messageId}/unread
+    @PatchMapping("/{messageId}/unread")
+    public ResponseEntity<MessageResponse> markUnread(@PathVariable Long conversationId,
+                                                      @PathVariable Long messageId) {
+        var conv = conversationsRepo.findById(conversationId)
+                .orElseThrow(() -> new IllegalArgumentException("Conversation not found"));
+
+        var msg = messagesRepo.findById(messageId)
+                .orElseThrow(() -> new IllegalArgumentException("Message not found"));
+
+        if (!conversationId.equals(msg.getConversationId())) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        var user1 = conv.getUser1Id();
+        var user2 = conv.getUser2Id();
+        if (!(msg.getSenderId().equals(user1) || msg.getSenderId().equals(user2))) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        msg.setIsRead(false);
+        var saved = messagesRepo.save(msg);
+
+        var dto = new MessageResponse(
+                saved.getId(), saved.getConversationId(), saved.getSenderId(), saved.getReceiverId(),
+                saved.getContent(), saved.getCreatedAt(), saved.getUpdatedAt()
+        );
+        return ResponseEntity.ok(dto);
     }
-
-    msg.setIsRead(true);                 // @PreUpdate will bump updatedAt
-    var saved = messagesRepo.save(msg);
-
-    var dto = new MessageResponse(
-            saved.getId(), saved.getConversationId(), saved.getSenderId(), saved.getReceiverId(),
-            saved.getContent(), saved.getCreatedAt(), saved.getUpdatedAt()
-    );
-    return ResponseEntity.ok(dto);
-}
-
-// PATCH /conversations/{conversationId}/messages/{messageId}/unread
-@PatchMapping("/{messageId}/unread")
-public ResponseEntity<MessageResponse> markUnread(@PathVariable Long conversationId,
-                                                  @PathVariable Long messageId) {
-    var conv = conversationsRepo.findById(conversationId)
-            .orElseThrow(() -> new IllegalArgumentException("Conversation not found"));
-
-    var msg = messagesRepo.findById(messageId)
-            .orElseThrow(() -> new IllegalArgumentException("Message not found"));
-
-    if (!conversationId.equals(msg.getConversationId())) {
-        return ResponseEntity.badRequest().build();
-    }
-
-    var user1 = conv.getUser1Id();
-    var user2 = conv.getUser2Id();
-    if (!(msg.getSenderId().equals(user1) || msg.getSenderId().equals(user2))) {
-        return ResponseEntity.badRequest().build();
-    }
-
-    msg.setIsRead(false);
-    var saved = messagesRepo.save(msg);
-
-    var dto = new MessageResponse(
-            saved.getId(), saved.getConversationId(), saved.getSenderId(), saved.getReceiverId(),
-            saved.getContent(), saved.getCreatedAt(), saved.getUpdatedAt()
-    );
-    return ResponseEntity.ok(dto);
-}
-
 }
