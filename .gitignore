@@ -30,3 +30,6 @@ Thumbs.db
 *.env
 application-prod.properties
 application-secrets.properties
+.gradle/
+build/
+
