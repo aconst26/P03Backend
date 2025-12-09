@@ -65,4 +65,12 @@ public ResponseEntity<?> getByEmail(@RequestParam("email") String email) {
 
 
 }
+    @GetMapping("/by-userid")
+public ResponseEntity<?> getByUserId(@RequestParam("userid") Long userId) {
+    return userService.findById(userId)
+        .map(ResponseEntity::ok)
+        .orElseGet(() -> ResponseEntity.status(404).body(new User()));
+
+
+}
 }

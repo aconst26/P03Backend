@@ -5,6 +5,8 @@ import jakarta.validation.constraints.Positive;
 public record CreateConversationRequest(
            @NotNull @Positive Long user1Id,
         @NotNull @Positive Long user2Id,
-        @NotNull @Positive Long listingId) {
+        @NotNull @Positive Long listingId,
+        String receiverName,
+        String receiverPicture) {
 
 }

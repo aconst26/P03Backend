@@ -34,19 +34,19 @@ public class ConversationsController {
         }
 
         var existing = conversationsRepo.findByUsersAndListingAnyOrder(
-                req.user1Id(), req.user2Id(), req.listingId()
+                req.user1Id(), req.user2Id(), req.listingId(), req.receiverName(), req.receiverPicture()
         );
 
         boolean wasCreated = existing.isEmpty();
         Conversations conv = existing.orElseGet(() ->
                 conversationsRepo.save(new Conversations(
-                        req.user1Id(), req.user2Id(), req.listingId()
+                        req.user1Id(), req.user2Id(), req.listingId(), req.receiverName(), req.receiverPicture()
                 ))
         );
 
         var dto = new ConversationResponse(
                 conv.getId(), conv.getUser1Id(), conv.getUser2Id(),
-                conv.getListingId(), conv.getLastMessageAt(), conv.getCreatedAt()
+                conv.getListingId(), conv.getLastMessageAt(), conv.getCreatedAt(), conv.getName(), conv.getPicture()
         );
 
         if (wasCreated) {
@@ -73,7 +73,7 @@ public class ConversationsController {
         Page<ConversationResponse> dtoPage = pageResult.map(c ->
                 new ConversationResponse(
                         c.getId(), c.getUser1Id(), c.getUser2Id(),
-                        c.getListingId(), c.getLastMessageAt(), c.getCreatedAt()
+                        c.getListingId(), c.getLastMessageAt(), c.getCreatedAt(), c.getName(), c.getPicture()
                 )
         );
         return ResponseEntity.ok(dtoPage);

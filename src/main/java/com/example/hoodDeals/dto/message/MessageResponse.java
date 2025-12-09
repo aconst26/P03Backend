@@ -9,5 +9,6 @@ public record MessageResponse(
         Long receiverId,
         String content,
         LocalDateTime createdAt,
-        LocalDateTime readAt
+        LocalDateTime readAt,
+        String name
 ) {}

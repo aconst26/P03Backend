@@ -10,6 +10,12 @@ public class Conversations {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "name")
+    private String receiverName;
+    
+    @Column(name = "picture")
+    private String receiverPicture;
+
     @Column(name = "user1_id")
     private Long user1Id;
 
@@ -35,10 +41,28 @@ public class Conversations {
     }
     // Constructors
     public Conversations() {}
-    public Conversations(Long user1Id, Long user2Id, Long listingId) {
+    public Conversations(Long user1Id, Long user2Id, Long listingId, String receiverName, String receiverPicture) {
         this.user1Id = user1Id;
         this.user2Id = user2Id;
         this.listingId = listingId;
+        this.receiverName = receiverName;
+        this.receiverPicture = receiverPicture;
+    }
+
+    public String getName() { 
+        return receiverName; 
+    }
+    
+    public void setName(String name) { 
+        this.receiverName = name; 
+    }
+    
+    public String getPicture() { 
+        return receiverPicture; 
+    }
+    
+    public void setPicture(String picture) { 
+        this.receiverPicture = picture; 
     }
 
     // Getters and setters
