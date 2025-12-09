@@ -25,7 +25,10 @@ public class Messages {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
     @Column(name = "conversation_id")
-    private Long conversationId;    
+    private Long conversationId;   
+    
+    private String name;
+    
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
@@ -34,6 +37,13 @@ public class Messages {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
+    }
+    public String getName() { 
+        return name; 
+    }
+    
+    public void setName(String name) { 
+        this.name = name; 
     }
 
     // Constructors

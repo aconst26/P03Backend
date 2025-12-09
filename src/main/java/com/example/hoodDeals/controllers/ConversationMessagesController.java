@@ -46,7 +46,8 @@ public class ConversationMessagesController {
                 m.getReceiverId(),
                 m.getContent(),
                 m.getCreatedAt(),
-                m.getUpdatedAt()
+                m.getUpdatedAt(),
+                m.getName()
         ));
 
         return ResponseEntity.ok(dtoPage);
@@ -79,6 +80,7 @@ public class ConversationMessagesController {
         msg.setContent(req.content());
         msg.setListingId(conv.getListingId());
         msg.setIsRead(false);
+        msg.setName(conv.getName());
 
         var saved = messagesRepo.save(msg);
 
@@ -93,7 +95,8 @@ public class ConversationMessagesController {
                 saved.getReceiverId(),
                 saved.getContent(),
                 saved.getCreatedAt(),
-                saved.getUpdatedAt()
+                saved.getUpdatedAt(),
+                saved.getName()
         );
         return ResponseEntity.ok(dto);
     }
@@ -123,7 +126,7 @@ public class ConversationMessagesController {
 
         var dto = new MessageResponse(
                 saved.getId(), saved.getConversationId(), saved.getSenderId(), saved.getReceiverId(),
-                saved.getContent(), saved.getCreatedAt(), saved.getUpdatedAt()
+                saved.getContent(), saved.getCreatedAt(), saved.getUpdatedAt(), saved.getName()
         );
         return ResponseEntity.ok(dto);
     }
@@ -153,7 +156,7 @@ public class ConversationMessagesController {
 
         var dto = new MessageResponse(
                 saved.getId(), saved.getConversationId(), saved.getSenderId(), saved.getReceiverId(),
-                saved.getContent(), saved.getCreatedAt(), saved.getUpdatedAt()
+                saved.getContent(), saved.getCreatedAt(), saved.getUpdatedAt(), saved.getName()
         );
         return ResponseEntity.ok(dto);
     }

@@ -23,6 +23,8 @@ public interface ConversationsRepository extends JpaRepository<Conversations, Lo
     Optional<Conversations> findByUsersAndListingAnyOrder(
             @Param("userA") Long userA,
             @Param("userB") Long userB,
-            @Param("listingId") Long listingId
+            @Param("listingId") Long listingId,
+            @Param("receiverName") String receiverName,
+            @Param("receiverPicture") String receiverPicture
     );
 }

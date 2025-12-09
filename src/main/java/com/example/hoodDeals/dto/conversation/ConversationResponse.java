@@ -7,7 +7,10 @@ public record ConversationResponse(
         Long user2Id,
         Long listingId,
         LocalDateTime lastMessageAt,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        String receiverName,
+        String receiverPicture
+
 ) {
     
 }
